@@ -75,11 +75,19 @@
     }
   });
 
-  // Block common browser save / source shortcuts
+  // Block common browser save / print / source shortcuts
   document.addEventListener('keydown', e => {
     const ctrl = e.ctrlKey || e.metaKey;
 
+    // Save page, view source
     if (ctrl && ['s', 'u'].includes(e.key.toLowerCase())) {
+      e.preventDefault();
+      showProtectionNotice();
+      return;
+    }
+
+    // Print (Ctrl+P / Cmd+P)
+    if (ctrl && e.key.toLowerCase() === 'p') {
       e.preventDefault();
       showProtectionNotice();
       return;
@@ -95,6 +103,15 @@
     if (e.key === 'PrintScreen') {
       showProtectionNotice();
     }
+  });
+
+  // Block print dialog triggered any other way (File → Print, etc.)
+  window.addEventListener('beforeprint', () => {
+    document.body.style.display = 'none';
+    showProtectionNotice();
+  });
+  window.addEventListener('afterprint', () => {
+    document.body.style.display = '';
   });
 
 
