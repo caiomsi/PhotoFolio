@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin · Laura Campo</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Tokens ── */
+    :root {
+      --bg:        #080807;
+      --bg-card:   #0f0e0d;
+      --bg-soft:   #141310;
+      --gold:      #c4a35a;
+      --gold-dim:  #7d6735;
+      --text:      #f0ebe0;
+      --text-dim:  #a09878;
+      --text-mute: #524e45;
+      --border:    rgba(196,163,90,0.15);
+      --border-s:  rgba(240,235,224,0.07);
+      --red:       #c05050;
+      --red-dim:   rgba(192,80,80,0.12);
+      --ease:      cubic-bezier(0.16,1,0.3,1);
+      --ff-d:      'Cormorant Garamond', Georgia, serif;
+      --ff-b:      'Jost', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ff-b);
+      font-weight: 300;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a     { color: inherit; text-decoration: none; }
+    img   { display: block; max-width: 100%; }
+    input, select, textarea, button { font-family: var(--ff-b); }
+    ::selection { background: rgba(196,163,90,0.2); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: rgba(8,8,7,0.97);
+      border: 1px solid var(--gold-dim);
+      color: var(--text-dim);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      padding: 11px 22px;
+      white-space: nowrap;
+      z-index: 9000;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.4s var(--ease), opacity 0.4s;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.error { border-color: var(--red); color: var(--red); }
+
+    /* ── Login view ── */
+    #login-view {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      border: 1px solid var(--border-s);
+      padding: 52px 44px;
+      background: var(--bg-card);
+    }
+
+    .login-logo {
+      font-family: var(--ff-b);
+      font-size: 0.75rem;
+      font-weight: 300;
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .login-sub {
+      font-size: 0.65rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin-bottom: 44px;
+    }
+
+    .login-heading {
+      font-family: var(--ff-d);
+      font-size: 1.8rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text);
+      margin-bottom: 32px;
+      line-height: 1.2;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+    .form-group label {
+      font-size: 0.6rem;
+      font-weight: 300;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+
+    .form-group input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border-s);
+      color: var(--text);
+      font-size: 0.87rem;
+      font-weight: 300;
+      padding: 10px 0;
+      outline: none;
+      transition: border-color 0.3s;
+      -webkit-appearance: none;
+    }
+    .form-group input::placeholder { color: var(--text-mute); }
+    .form-group input:focus { border-bottom-color: var(--gold); }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--gold);
+      color: var(--bg);
+      font-family: var(--ff-b);
+      font-size: 0.7rem;
+      font-weight: 300;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      padding: 16px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--text); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .login-toggle {
+      display: block;
+      text-align: center;
+      font-size: 0.65rem;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      color: var(--text-mute);
+      margin-top: 20px;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    .login-toggle:hover { color: var(--gold-dim); }
+
+    /* ── Admin view ── */
+    #admin-view { display: none; }
+
+    .admin-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8,8,7,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-s);
+      padding: 18px 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .admin-logo {
+      font-size: 0.75rem;
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+    }
+
+    .admin-logo span {
+      color: var(--gold-dim);
+      margin-left: 10px;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+    }
+
+    .btn-logout {
+      font-family: var(--ff-b);
+      font-size: 0.62rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      background: none;
+      border: 1px solid var(--border-s);
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: color 0.3s, border-color 0.3s;
+    }
+    .btn-logout:hover { color: var(--text); border-color: var(--border); }
+
+    .admin-body { padding: 56px 52px; max-width: 1200px; }
+
+    /* ── Upload section ── */
+    .upload-section {
+      border: 1px solid var(--border-s);
+      padding: 44px;
+      background: var(--bg-card);
+      margin-bottom: 64px;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 36px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-s);
+    }
+
+    .section-num {
+      font-family: var(--ff-d);
+      font-size: 0.85rem;
+      font-style: italic;
+      color: var(--gold-dim);
+    }
+
+    .section-title-text {
+      font-size: 0.65rem;
+      font-weight: 300;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 1px dashed var(--border);
+      padding: 52px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s;
+      position: relative;
+      margin-bottom: 28px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--gold);
+      background: rgba(196,163,90,0.04);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .drop-zone-icon {
+      font-size: 2rem;
+      color: var(--gold-dim);
+      margin-bottom: 12px;
+      display: block;
+    }
+    .drop-zone-text {
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+    .drop-zone-sub {
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      color: var(--text-mute);
+      margin-top: 6px;
+    }
+
+    /* Selected files preview */
+    .files-preview {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .file-thumb {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+      background: var(--bg-soft);
+    }
+    .file-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .file-thumb-name {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(8,8,7,0.8);
+      font-size: 0.5rem;
+      padding: 4px 6px;
+      color: var(--text-mute);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Upload fields */
+    .upload-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 16px;
+      align-items: end;
+    }
+
+    .upload-fields .form-group { margin-bottom: 0; }
+
+    .upload-fields input,
+    .upload-fields select {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border-s);
+      color: var(--text);
+      font-family: var(--ff-b);
+      font-size: 0.87rem;
+      font-weight: 300;
+      padding: 10px 0;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.3s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .upload-fields input::placeholder { color: var(--text-mute); }
+    .upload-fields input:focus,
+    .upload-fields select:focus { border-bottom-color: var(--gold); }
+
+    .upload-fields select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%237d6735' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 2px center;
+      padding-right: 18px;
+      cursor: pointer;
+      color: var(--text-dim);
+    }
+    .upload-fields select option { background: var(--bg); color: var(--text); }
+
+    .btn-upload {
+      font-family: var(--ff-b);
+      font-size: 0.7rem;
+      font-weight: 300;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--gold);
+      border: none;
+      padding: 13px 28px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.3s;
+      align-self: end;
+    }
+    .btn-upload:hover:not(:disabled) { background: var(--text); }
+    .btn-upload:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Progress bar */
+    .upload-progress-bar {
+      height: 2px;
+      background: var(--border-s);
+      margin-top: 20px;
+      overflow: hidden;
+      display: none;
+    }
+    .upload-progress-fill {
+      height: 100%;
+      background: var(--gold);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .upload-progress-bar.visible { display: block; }
+
+    /* ── Photos grid ── */
+    .photos-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .photos-count {
+      font-family: var(--ff-d);
+      font-size: 1.8rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text);
+    }
+
+    .photos-count span {
+      font-size: 1rem;
+      color: var(--gold);
+    }
+
+    .photos-meta {
+      font-size: 0.65rem;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .admin-photo-card {
+      position: relative;
+      background: var(--bg-card);
+      overflow: hidden;
+      border: 1px solid var(--border-s);
+      transition: border-color 0.3s;
+    }
+    .admin-photo-card:hover { border-color: var(--border); }
+
+    .admin-photo-thumb {
+      aspect-ratio: 4/3;
+      overflow: hidden;
+    }
+    .admin-photo-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s;
+    }
+    .admin-photo-card:hover .admin-photo-thumb img { transform: scale(1.04); }
+
+    .admin-photo-info {
+      padding: 12px 14px;
+    }
+    .admin-photo-title {
+      font-size: 0.82rem;
+      font-weight: 300;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .admin-photo-cat {
+      font-size: 0.58rem;
+      font-weight: 300;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin-top: 3px;
+    }
+
+    .btn-delete {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 30px;
+      height: 30px;
+      background: rgba(8,8,7,0.85);
+      border: 1px solid rgba(192,80,80,0.4);
+      color: var(--red);
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s, background 0.2s;
+      line-height: 1;
+    }
+    .admin-photo-card:hover .btn-delete { opacity: 1; }
+    .btn-delete:hover { background: var(--red-dim); }
+
+    .admin-empty {
+      grid-column: 1 / -1;
+      padding: 60px;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .admin-header { padding: 16px 20px; }
+      .admin-body   { padding: 32px 20px; }
+      .upload-section { padding: 28px 20px; }
+      .upload-fields { grid-template-columns: 1fr; }
+      .btn-upload { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ── Login ── -->
+  <div id="login-view">
+    <div class="login-card">
+      <span class="login-logo">LAURA CAMPO</span>
+      <p class="login-sub">Painel Administrativo</p>
+      <h1 class="login-heading" id="login-heading">Entrar na sua conta</h1>
+
+      <form id="auth-form" novalidate>
+        <div class="form-group">
+          <label for="auth-email">E-mail</label>
+          <input type="email" id="auth-email" name="email" placeholder="seu@email.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="auth-password">Senha</label>
+          <input type="password" id="auth-password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-primary" id="auth-btn">Entrar</button>
+      </form>
+
+      <span class="login-toggle" id="login-toggle">Primeiro acesso? Criar conta</span>
+    </div>
+  </div>
+
+  <!-- ── Admin panel ── -->
+  <div id="admin-view">
+
+    <header class="admin-header">
+      <div class="admin-logo">
+        LAURA CAMPO <span>· Admin</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;">
+        <a href="index.html" style="font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-mute);transition:color 0.3s;" onmouseover="this.style.color='var(--text-dim)'" onmouseout="this.style.color='var(--text-mute)'">← Ver Site</a>
+        <button class="btn-logout" id="logout-btn">Sair</button>
+      </div>
+    </header>
+
+    <div class="admin-body">
+
+      <!-- Upload section -->
+      <div class="upload-section">
+        <div class="section-label">
+          <span class="section-num">01</span>
+          <span class="section-title-text">Adicionar Fotos</span>
+        </div>
+
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept="image/jpeg,image/jpg,image/png,image/webp" multiple>
+          <span class="drop-zone-icon">⊕</span>
+          <p class="drop-zone-text">Arraste as fotos aqui ou clique para selecionar</p>
+          <p class="drop-zone-sub">JPEG · PNG · WEBP · Até 50 MB por foto</p>
+        </div>
+
+        <div class="files-preview" id="files-preview"></div>
+
+        <div class="upload-fields">
+          <div class="form-group">
+            <label for="photo-title">Título da Foto</label>
+            <input type="text" id="photo-title" placeholder="Ex: O Primeiro Gol">
+          </div>
+          <div class="form-group">
+            <label for="photo-cat">Categoria</label>
+            <select id="photo-cat">
+              <option value="Ação em Campo">Ação em Campo</option>
+              <option value="Retrato">Retrato</option>
+              <option value="Liga Jovem">Liga Jovem</option>
+              <option value="Torneio">Torneio</option>
+              <option value="Jogo Completo">Jogo Completo</option>
+              <option value="Pré-Temporada">Pré-Temporada</option>
+            </select>
+          </div>
+          <button class="btn-upload" id="upload-btn" disabled>Fazer Upload</button>
+        </div>
+
+        <div class="upload-progress-bar" id="progress-bar">
+          <div class="upload-progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Photos management -->
+      <div>
+        <div class="section-label">
+          <span class="section-num">02</span>
+          <span class="section-title-text">Gerenciar Fotos</span>
+        </div>
+
+        <div class="photos-header">
+          <p class="photos-count">
+            <span id="photo-count">0</span> fotos na galeria
+          </p>
+          <p class="photos-meta" id="photos-meta"></p>
+        </div>
+
+        <div class="admin-grid" id="admin-grid">
+          <div class="admin-empty">Carregando…</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    const sb = window.supabase.createClient(
+      'https://hktzefkarulgoqueotun.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrdHplZmthcnVsZ29xdWVvdHVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NzY3ODcsImV4cCI6MjA5NzA1Mjc4N30.d7g936N33UldTwNg_HWYmLFH8YWhxhr0YNPNLpVCGbY'
+    );
+
+    /* ── Toast ── */
+    const toast = document.getElementById('toast');
+    let toastTimer;
+    function showToast(msg, isError = false) {
+      clearTimeout(toastTimer);
+      toast.textContent = msg;
+      toast.className = 'toast show' + (isError ? ' error' : '');
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    /* ── Auth state ── */
+    const loginView = document.getElementById('login-view');
+    const adminView = document.getElementById('admin-view');
+    const authForm  = document.getElementById('auth-form');
+    const authBtn   = document.getElementById('auth-btn');
+    const loginToggle = document.getElementById('login-toggle');
+    const loginHeading = document.getElementById('login-heading');
+
+    let isSignUp = false;
+
+    loginToggle.addEventListener('click', () => {
+      isSignUp = !isSignUp;
+      loginHeading.textContent = isSignUp ? 'Criar nova conta' : 'Entrar na sua conta';
+      authBtn.textContent      = isSignUp ? 'Criar Conta' : 'Entrar';
+      loginToggle.textContent  = isSignUp ? 'Já tenho conta. Entrar' : 'Primeiro acesso? Criar conta';
+    });
+
+    authForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const email    = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+
+      if (!email || !password) return;
+
+      authBtn.textContent = isSignUp ? 'Criando…' : 'Entrando…';
+      authBtn.disabled = true;
+
+      let result;
+      if (isSignUp) {
+        result = await sb.auth.signUp({ email, password });
+      } else {
+        result = await sb.auth.signInWithPassword({ email, password });
+      }
+
+      if (result.error) {
+        showToast(result.error.message, true);
+        authBtn.textContent = isSignUp ? 'Criar Conta' : 'Entrar';
+        authBtn.disabled = false;
+      } else if (isSignUp && !result.data.session) {
+        showToast('Verifique seu e-mail para confirmar o cadastro.');
+        authBtn.textContent = 'Criar Conta';
+        authBtn.disabled = false;
+      }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await sb.auth.signOut();
+    });
+
+    sb.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        loginView.style.display = 'none';
+        adminView.style.display = 'block';
+        loadPhotos();
+      } else {
+        loginView.style.display = 'flex';
+        adminView.style.display = 'none';
+      }
+    });
+
+    /* ── File selection ── */
+    const dropZone    = document.getElementById('drop-zone');
+    const fileInput   = document.getElementById('file-input');
+    const filesPreview= document.getElementById('files-preview');
+    const uploadBtn   = document.getElementById('upload-btn');
+    let selectedFiles = [];
+
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      handleFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+    });
+
+    fileInput.addEventListener('change', () => {
+      handleFiles(Array.from(fileInput.files));
+    });
+
+    function handleFiles(files) {
+      if (!files.length) return;
+      selectedFiles = files;
+      filesPreview.innerHTML = '';
+
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const div = document.createElement('div');
+          div.className = 'file-thumb';
+          div.innerHTML = `<img src="${ev.target.result}" alt="${file.name}">
+            <span class="file-thumb-name">${file.name}</span>`;
+          filesPreview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Auto-fill title from first filename (remove extension)
+      const autoTitle = files[0].name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+      const titleInput = document.getElementById('photo-title');
+      if (!titleInput.value) {
+        titleInput.value = autoTitle.charAt(0).toUpperCase() + autoTitle.slice(1);
+      }
+
+      uploadBtn.disabled = false;
+    }
+
+    /* ── Upload ── */
+    const progressBar  = document.getElementById('progress-bar');
+    const progressFill = document.getElementById('progress-fill');
+
+    uploadBtn.addEventListener('click', async () => {
+      if (!selectedFiles.length) return;
+
+      const title    = document.getElementById('photo-title').value.trim() || selectedFiles[0].name;
+      const category = document.getElementById('photo-cat').value;
+
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Enviando…';
+      progressBar.classList.add('visible');
+
+      let uploaded = 0;
+
+      for (const file of selectedFiles) {
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
+        progressFill.style.width = `${Math.round((uploaded / selectedFiles.length) * 80)}%`;
+
+        // Upload to storage
+        const { data: storageData, error: storageErr } = await sb.storage
+          .from('laura-photos')
+          .upload(filename, file, { contentType: file.type, upsert: false });
+
+        if (storageErr) {
+          showToast(`Erro: ${storageErr.message}`, true);
+          continue;
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = sb.storage
+          .from('laura-photos')
+          .getPublicUrl(storageData.path);
+
+        // Insert into DB
+        const photoTitle = selectedFiles.length === 1
+          ? title
+          : `${title} (${uploaded + 1})`;
+
+        const { error: dbErr } = await sb
+          .from('laura_photos')
+          .insert({ title: photoTitle, category, image_url: publicUrl, storage_path: storageData.path });
+
+        if (dbErr) {
+          showToast(`Erro ao salvar: ${dbErr.message}`, true);
+        }
+
+        uploaded++;
+      }
+
+      progressFill.style.width = '100%';
+      setTimeout(() => {
+        progressBar.classList.remove('visible');
+        progressFill.style.width = '0%';
+      }, 600);
+
+      showToast(`${uploaded} foto${uploaded !== 1 ? 's' : ''} adicionada${uploaded !== 1 ? 's' : ''} com sucesso!`);
+
+      // Reset form
+      selectedFiles = [];
+      filesPreview.innerHTML = '';
+      fileInput.value = '';
+      document.getElementById('photo-title').value = '';
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Fazer Upload';
+
+      loadPhotos();
+    });
+
+    /* ── Load & render photos ── */
+    async function loadPhotos() {
+      const { data, error } = await sb
+        .from('laura_photos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) { showToast('Erro ao carregar fotos.', true); return; }
+
+      document.getElementById('photo-count').textContent = data.length;
+      document.getElementById('photos-meta').textContent =
+        data.length > 0 ? `Última adição: ${new Date(data[0].created_at).toLocaleDateString('pt-BR')}` : '';
+
+      const grid = document.getElementById('admin-grid');
+      grid.innerHTML = '';
+
+      if (!data.length) {
+        grid.innerHTML = '<p class="admin-empty">Nenhuma foto ainda. Faça o upload acima.</p>';
+        return;
+      }
+
+      data.forEach(photo => {
+        const card = document.createElement('div');
+        card.className = 'admin-photo-card';
+        card.innerHTML = `
+          <div class="admin-photo-thumb">
+            <img src="${photo.image_url}" alt="${photo.title}" loading="lazy">
+          </div>
+          <div class="admin-photo-info">
+            <p class="admin-photo-title">${photo.title}</p>
+            <p class="admin-photo-cat">${photo.category}</p>
+          </div>
+          <button class="btn-delete" data-id="${photo.id}" data-path="${photo.storage_path || ''}" title="Excluir foto">✕</button>
+        `;
+        grid.appendChild(card);
+      });
+
+      // Delete buttons
+      grid.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deletePhoto(btn.dataset.id, btn.dataset.path));
+      });
+    }
+
+    /* ── Delete photo ── */
+    async function deletePhoto(id, storagePath) {
+      if (!confirm('Tem certeza que deseja excluir esta foto? Esta ação não pode ser desfeita.')) return;
+
+      // Remove from storage (if uploaded by Laura, not a seed placeholder)
+      if (storagePath) {
+        await sb.storage.from('laura-photos').remove([storagePath]);
+      }
+
+      // Remove from DB
+      const { error } = await sb.from('laura_photos').delete().eq('id', id);
+
+      if (error) {
+        showToast('Erro ao excluir foto.', true);
+      } else {
+        showToast('Foto excluída.');
+        loadPhotos();
+      }
+    }
+
+  })();
+  </script>
+</body>
+</html>
